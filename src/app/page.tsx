@@ -1,65 +1,98 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+// 🔥 임시 디버깅 코드
+console.log('Firebase 설정 확인:', {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅ 있음' : '❌ 없음',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? '✅ 있음' : '❌ 없음',
+});
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { loginAnonymously, createGoal } from '@/lib/firebase';
+import { generateMandal } from '@/lib/ai';
+import { CycleType } from '../../types';
+
+export default function WelcomePage() {
+  const router = useRouter();
+  const [cycleType, setCycleType] = useState<CycleType>('weekly');
+  const [goalText, setGoalText] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!goalText.trim()) {
+      alert('목표를 입력해주세요');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. 익명 로그인
+      const user = await loginAnonymously();
+
+      // 2. AI로 만다라트 생성
+      const { mainGoal, subGoals } = await generateMandal(goalText, cycleType);
+
+      // 3. Firestore에 저장
+      const goalId = await createGoal({
+        userId: user.uid,
+        cycleType,
+        mainGoal,
+        subGoals,
+        createdAt: new Date(),
+      });
+
+      // 4. 메인 화면으로 이동
+      router.push(`/goal/${goalId}`);
+    } catch (error) {
+      console.error(error);
+      alert('생성 실패: ' + error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-col items-center justify-center min-h-screen p-8">
+      <h1 className="text-4xl font-bold mb-8">Calendalart</h1>
+      <p className="text-gray-600 mb-8">목표를 입력하면 AI가 만다라트로 만들어드립니다</p>
+
+      {/* 기간 선택 */}
+      <div className="flex gap-4 mb-8">
+        <button
+          onClick={() => setCycleType('weekly')}
+          className={`px-6 py-3 rounded-lg ${
+            cycleType === 'weekly' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          주간 (1주)
+        </button>
+        <button
+          onClick={() => setCycleType('focus')}
+          className={`px-6 py-3 rounded-lg ${
+            cycleType === 'focus' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          집중 (8주)
+        </button>
+      </div>
+
+      {/* 목표 입력 */}
+      <textarea
+        value={goalText}
+        onChange={(e) => setGoalText(e.target.value)}
+        placeholder="예: 토익 800점 달성하기"
+        className="w-full max-w-md h-32 p-4 border rounded-lg mb-4"
+      />
+
+      {/* 생성 버튼 */}
+      <button
+        onClick={handleGenerate}
+        disabled={loading}
+        className="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+      >
+        {loading ? '생성 중...' : '만다라트 생성'}
+      </button>
     </div>
   );
 }
+
