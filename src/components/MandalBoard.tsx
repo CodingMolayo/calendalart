@@ -53,7 +53,10 @@ function MandalCard({ subGoal, subIdx, goalId, onUpdate }: { subGoal: Goal['subG
             {`${subGoal.actions.filter(a => a.done).length}/8`}
           </span>
         </div>
-        <div className="flex-grow space-y-1 md:space-y-2 overflow-y-auto no-scrollbar">
+        <div 
+          className="flex-grow space-y-1 md:space-y-2 overflow-y-auto no-scrollbar"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {subGoal.actions.map((action, actIdx) => (
             <label key={actIdx} className="flex items-start gap-1 md:gap-2.5 cursor-pointer">
               <input

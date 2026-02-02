@@ -180,6 +180,7 @@ calendalart/
 │   ├── page.tsx                // 웰컴 + 목표 입력
 │   └── goal/[id]/page.tsx      // 메인 화면 (캘린더+만다라트)
 ├── components/
+│   ├── AppLayout.tsx         // 좌측 session 목록
 │   ├── MandalBoard.tsx         // 만다라트 전체 (셀 포함)
 │   └── Calendar.tsx            // 캘린더 전체 (드래그 포함)
 ├── lib/

@@ -44,3 +44,4 @@ function hexToHsl(hex: string) {
     const newSaturation = Math.min(90, s + progress * 10);
     return hslToCss(h, newSaturation, newLightness);
   }
+    

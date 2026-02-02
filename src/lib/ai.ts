@@ -46,7 +46,7 @@ You are a goal management expert. Break down the goals into a mandala structure.
 2. Each sub-goal is a specific intermediate goal.
 3. Create exactly eight actionable actions for each subgoal.
 4. Write the actions as a checklist of two to three words.
-5. Answer in Korean,
+5. Answer in Korean.
 
 **Please output only in the JSON format below.**:
 {
@@ -62,7 +62,7 @@ You are a goal management expert. Break down the goals into a mandala structure.
 
   // Groq API 호출
   const completion = await groq.chat.completions.create({
-    model: 'openai/gpt-oss-120b', 
+    model: 'groq/compound', 
     messages: [
       {
         role: 'user',

@@ -93,7 +93,20 @@ export default function WelcomePage() {
             </div>
           ) : '만다라트 생성'}
         </button>
+        
+        <p className="absolute bottom-4 text-xs text-gray-400">
+          v0.0.2-모바일 반응형 및 체크리스트 활성화
+        </p>
+
       </div>
     </AppLayout>
   );
 }
+
+// todo : (0) 전체적으로 3*3 board가 3*3 형태로 나타나는 만다라트 구조로.
+// todo : (1) 개별 mandalboard를 3*3 형태로 나타내기
+// todo : (2) 첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
+// todo : (3) calendar에서 board 눌렀을 때 동작 - board popup + 삭제 버튼
+// todo : (4) 모바일 친화성 : 8주 달력 가로로 한 줄. 
+// todo : (5) 여러 LLM 모델을 돌아가면서 사용하도록?
+// todo : (6) 목표들 지우기, 아카이브화 하기
