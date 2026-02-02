@@ -7,13 +7,19 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY, // 환경변수 이름 변경
 });
 
+// AI 응답의 예상 구조를 정의하는 인터페이스
+interface AiResponse {
+  mainGoal: string;
+  subGoals: { title: string; actions: string[] }[];
+}
+
 // 안전한 JSON 파싱
-function safeParseJSON(text: string): any {
+function safeParseJSON(text: string): AiResponse {
   try {
     const cleaned = text.replace(/```json\s*|\s*```/g, '').trim();
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('JSON 형식을 찾을 수 없습니다');
-    return JSON.parse(jsonMatch[0]);
+    return JSON.parse(jsonMatch[0]) as AiResponse;
   } catch (error) {
     console.error('JSON 파싱 실패:', error);
     return { mainGoal: '', subGoals: [] };
@@ -30,23 +36,24 @@ function normalizeToEight<T>(arr: T[], createDefault: () => T): T[] {
 
 export async function generateMandal(goalText: string, cycleType: CycleType) {
   const prompt = `
-당신은 목표 관리 전문가입니다. 사용자의 목표를 만다라트 구조로 분해해주세요.
+You are a goal management expert. Break down the goals into a mandala structure.
 
-**목표**: ${goalText}
-**기간**: ${cycleType === 'weekly' ? '1주일' : '8주 (2개월)'}
+**Goal**: ${goalText}
+**Period**: ${cycleType === 'weekly' ? '1주일' : '8주 (2개월)'}
 
-**규칙**:
-1. 목표를 시간 순서대로 정확히 8단계 Sub-goal로 나눕니다
-2. 각 Sub-goal은 구체적인 중간 목표입니다
-3. 각 Sub-goal마다 실행 가능한 Action을 정확히 8개 생성합니다
-4. Action은 체크리스트 수준으로 작성합니다
+**RULE**:
+1. Break your goal down into 8 sub-goals, each in precise chronological order.
+2. Each sub-goal is a specific intermediate goal.
+3. Create exactly eight actionable actions for each subgoal.
+4. Write the actions as a checklist of two to three words.
+5. Answer in Korean,
 
-**반드시 아래 JSON 형식으로만 출력하세요**:
+**Please output only in the JSON format below.**:
 {
-  "mainGoal": "정제된 목표 문장",
+  "mainGoal": "Refined target sentence (5-7 words)",
   "subGoals": [
     {
-      "title": "Sub-goal 제목",
+      "title": "Sub-goals",
       "actions": ["action1", "action2", "action3", "action4", "action5", "action6", "action7", "action8"]
     }
   ]
@@ -55,7 +62,7 @@ export async function generateMandal(goalText: string, cycleType: CycleType) {
 
   // Groq API 호출
   const completion = await groq.chat.completions.create({
-    model: 'llama-3.1-70b-versatile', // Groq의 최신 모델
+    model: 'openai/gpt-oss-120b', 
     messages: [
       {
         role: 'user',
@@ -90,7 +97,7 @@ export async function generateMandal(goalText: string, cycleType: CycleType) {
     '#85C1E2',
   ];
 
-  const subGoals: SubGoal[] = normalizedSubGoals.map((sg: any, idx: number) => {
+  const subGoals: SubGoal[] = normalizedSubGoals.map((sg, idx) => {
     // Action도 8개 보장
     const normalizedActions = normalizeToEight(
       sg.actions || [],

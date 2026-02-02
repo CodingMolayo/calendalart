@@ -1,16 +1,11 @@
 'use client';
 
-// 🔥 임시 디버깅 코드
-console.log('Firebase 설정 확인:', {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? '✅ 있음' : '❌ 없음',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? '✅ 있음' : '❌ 없음',
-});
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginAnonymously, createGoal } from '@/lib/firebase';
 import { generateMandal } from '@/lib/ai';
 import { CycleType } from '../../types';
+import AppLayout from '@/components/AppLayout';
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -26,13 +21,8 @@ export default function WelcomePage() {
 
     setLoading(true);
     try {
-      // 1. 익명 로그인
       const user = await loginAnonymously();
-
-      // 2. AI로 만다라트 생성
       const { mainGoal, subGoals } = await generateMandal(goalText, cycleType);
-
-      // 3. Firestore에 저장
       const goalId = await createGoal({
         userId: user.uid,
         cycleType,
@@ -40,8 +30,6 @@ export default function WelcomePage() {
         subGoals,
         createdAt: new Date(),
       });
-
-      // 4. 메인 화면으로 이동
       router.push(`/goal/${goalId}`);
     } catch (error) {
       console.error(error);
@@ -52,47 +40,60 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-4xl font-bold mb-8">Calendalart</h1>
-      <p className="text-gray-600 mb-8">목표를 입력하면 AI가 만다라트로 만들어드립니다</p>
+    <AppLayout>
+      <div className="flex flex-col items-center justify-center min-h-full p-4 sm:p-8 bg-white rounded-2xl shadow-lg">
+        <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-8 text-center text-gray-800">새로운 목표 수립</h1>
+        <p className="text-gray-500 mb-6 sm:mb-8 text-center">AI와 함께 체계적인 목표를 세워보세요.</p>
 
-      {/* 기간 선택 */}
-      <div className="flex gap-4 mb-8">
+        {/* 기간 선택 */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full max-w-md">
+          <button
+            onClick={() => setCycleType('weekly')}
+            className={`flex-1 px-6 py-3 rounded-xl text-lg font-semibold transition-all duration-200 ${
+              cycleType === 'weekly' 
+                ? 'bg-blue-500 text-white shadow-lg transform hover:scale-105' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            주간 (1주)
+          </button>
+          <button
+            onClick={() => setCycleType('focus')}
+            className={`flex-1 px-6 py-3 rounded-xl text-lg font-semibold transition-all duration-200 ${
+              cycleType === 'focus' 
+                ? 'bg-purple-500 text-white shadow-lg transform hover:scale-105' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            집중 (8주)
+          </button>
+        </div>
+
+        {/* 목표 입력 */}
+        <textarea
+          value={goalText}
+          onChange={(e) => setGoalText(e.target.value)}
+          placeholder="예: 건강한 식습관 만들기"
+          className="w-full max-w-md h-36 p-4 border-2 border-gray-300 rounded-xl mb-6 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+        />
+
+        {/* 생성 버튼 */}
         <button
-          onClick={() => setCycleType('weekly')}
-          className={`px-6 py-3 rounded-lg ${
-            cycleType === 'weekly' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-          }`}
+          onClick={handleGenerate}
+          disabled={loading}
+          className="w-full max-w-md px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xl font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105"
         >
-          주간 (1주)
-        </button>
-        <button
-          onClick={() => setCycleType('focus')}
-          className={`px-6 py-3 rounded-lg ${
-            cycleType === 'focus' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-          }`}
-        >
-          집중 (8주)
+          {loading ? (
+            <div className="flex items-center justify-center">
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              생성 중...
+            </div>
+          ) : '만다라트 생성'}
         </button>
       </div>
-
-      {/* 목표 입력 */}
-      <textarea
-        value={goalText}
-        onChange={(e) => setGoalText(e.target.value)}
-        placeholder="예: 토익 800점 달성하기"
-        className="w-full max-w-md h-32 p-4 border rounded-lg mb-4"
-      />
-
-      {/* 생성 버튼 */}
-      <button
-        onClick={handleGenerate}
-        disabled={loading}
-        className="px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
-      >
-        {loading ? '생성 중...' : '만다라트 생성'}
-      </button>
-    </div>
+    </AppLayout>
   );
 }
-

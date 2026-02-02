@@ -1,85 +1,129 @@
 'use client';
 
+import { CalendarEvent, CycleType } from '../../types';
+import { 
+  format, 
+  addMonths, 
+  startOfMonth, 
+  endOfMonth, 
+  eachDayOfInterval, 
+  startOfWeek, 
+  endOfWeek, 
+  isSameMonth, 
+  isSameDay, 
+  addDays 
+} from 'date-fns';
+import { useDroppable } from '@dnd-kit/core';
 import { useState } from 'react';
-import { CycleType, CalendarEvent } from '../../types';
-import { updateSubGoal } from '@/lib/firebase';
 
 interface Props {
   goalId: string;
   cycleType: CycleType;
+  events: CalendarEvent[];
 }
 
-export default function Calendar({ goalId, cycleType }: Props) {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-
-  // 드래그 시작 (데이터 전달)
-  const handleDragStart = (e: React.DragEvent, subGoalIndex: number, title: string, color: string) => {
-    e.dataTransfer.setData('subGoalIndex', subGoalIndex.toString());
-    e.dataTransfer.setData('title', title);
-    e.dataTransfer.setData('color', color);
-  };
-
-  // 드롭 처리
-  const handleDrop = async (e: React.DragEvent, date: Date) => {
-    e.preventDefault();
-    const subGoalIndex = parseInt(e.dataTransfer.getData('subGoalIndex'));
-    const title = e.dataTransfer.getData('title');
-    const color = e.dataTransfer.getData('color');
-
-    // 경고 표시
-    if (!confirm('캘린더에 등록하면 Sub-goal을 수정할 수 없습니다. 계속하시겠습니까?')) {
-      return;
-    }
-
-    // 일정 추가
-    const newEvent: CalendarEvent = {
-      id: Date.now().toString(),
-      subGoalIndex,
-      title,
-      color,
-      startDate: date,
-      endDate: new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000), // 기본 7일
-    };
-    setEvents([...events, newEvent]);
-
-    // Sub-goal Lock 처리
-    await updateSubGoal(goalId, subGoalIndex, { locked: true });
-  };
-
-  // 간단한 주간 캘린더 (실제는 라이브러리 사용 권장)
-  const days = Array.from({ length: cycleType === 'weekly' ? 7 : 56 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    return date;
-  });
+function WeeklyCalendarDay({ date, events }: { date: Date, events: CalendarEvent[] }) {
+  const { isOver, setNodeRef } = useDroppable({ id: date.toISOString() });
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold mb-4">캘린더</h2>
-      <div className="grid grid-cols-7 gap-2">
-        {days.map((date, idx) => (
-          <div
-            key={idx}
-            onDrop={(e) => handleDrop(e, date)}
-            onDragOver={(e) => e.preventDefault()}
-            className="border rounded p-2 min-h-[80px] hover:bg-gray-50"
-          >
-            <div className="text-sm text-gray-600">{date.getDate()}일</div>
-            {/* 해당 날짜의 일정 표시 */}
-            {events
-              .filter(e => e.startDate.toDateString() === date.toDateString())
-              .map(event => (
-                <div
-                  key={event.id}
-                  className="text-xs p-1 rounded mt-1"
-                  style={{ backgroundColor: event.color, color: 'white' }}
-                >
-                  {event.title}
-                </div>
-              ))}
-          </div>
-        ))}
+    <div 
+      ref={setNodeRef} 
+      className={`calendar-day border rounded-lg p-2 min-h-[120px] transition-colors shadow-sm ${
+        isOver ? 'bg-blue-100' : 'bg-white'
+      }`}
+    >
+      <div className="text-center text-sm font-semibold text-gray-600">{format(date, 'd')}일</div>
+      <div className="mt-2 space-y-1">
+        {events
+          .filter(e => isSameDay(e.startDate, date))
+          .map(event => (
+            <div key={event.id} className="text-xs p-1.5 rounded-lg shadow-md font-medium truncate" style={{ backgroundColor: event.color, color: 'white' }}>
+              {event.title}
+            </div>
+          ))}
       </div>
+    </div>
+  );
+}
+
+function MonthlyCalendarWeek({ week, monthStart, events }: { week: Date[], monthStart: Date, events: CalendarEvent[] }) {
+  const { isOver, setNodeRef } = useDroppable({ id: week[0].toISOString() });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`grid grid-cols-7 h-24 border rounded-md transition-colors relative ${
+        isOver ? 'bg-blue-100' : 'bg-white hover:bg-gray-50'
+      }`}
+    >
+      {week.map(day => (
+        <div key={day.toISOString()} className={`p-1 border-r text-center ${!isSameMonth(day, monthStart) ? 'text-gray-300' : ''}`}>
+          <span className={`text-[10px] ${isSameDay(day, new Date()) ? 'bg-blue-500 text-white rounded-full p-1' : ''}`}>
+            {format(day, 'd')}
+          </span>
+        </div>
+      ))}
+      {events.filter(e => isSameDay(startOfWeek(e.startDate, { weekStartsOn: 0 }), week[0])).map(event => (
+        <div
+          key={event.id}
+          className="absolute inset-0 bg-opacity-70 m-1 p-1 rounded-lg shadow flex items-center justify-center"
+          style={{ backgroundColor: event.color, color: 'white' }}
+        >
+          <p className="text-xs font-bold text-center truncate">{event.title}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function Calendar({ cycleType, events }: Props) {
+  const [currentDate] = useState(new Date());
+
+  const renderWeeklyCalendar = () => {
+    const days = Array.from({ length: 7 }, (_, i) => addDays(new Date(), i));
+    return (
+      <div className="grid grid-cols-7 gap-2">
+        {days.map(date => <WeeklyCalendarDay key={date.toISOString()} date={date} events={events} />)}
+      </div>
+    );
+  };
+
+  const renderMonthlyCalendars = () => {
+    const months = [currentDate, addMonths(currentDate, 1)];
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {months.map((month, index) => renderMonth(month, index))}
+      </div>
+    );
+  };
+
+  const renderMonth = (date: Date, monthIndex: number) => {
+    const monthStart = startOfMonth(date);
+    const weeks: Date[][] = [];
+    const days = eachDayOfInterval({ start: startOfWeek(monthStart, { weekStartsOn: 0 }), end: endOfWeek(endOfMonth(monthStart), { weekStartsOn: 0 }) });
+    for (let i = 0; i < days.length; i += 7) {
+        weeks.push(days.slice(i, i + 7));
+    }
+
+    return (
+      <div key={monthIndex} className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+        <h3 className="text-lg font-bold text-center mb-4">{format(date, 'yyyy년 M월')}</h3>
+        <div className="grid grid-cols-7 text-center text-xs font-bold text-gray-500 mb-2">
+          <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+        </div>
+        <div className="space-y-1">
+          {weeks.map((week, weekIndex) => (
+            <MonthlyCalendarWeek key={weekIndex} week={week} monthStart={monthStart} events={events} />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="w-full">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">캘린더</h2>
+      {cycleType === 'weekly' ? renderWeeklyCalendar() : renderMonthlyCalendars()}
     </div>
   );
 }
