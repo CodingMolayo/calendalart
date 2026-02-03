@@ -1,177 +1,38 @@
-MVP 개발 명세서를 보내줄게. 해당 개발 명세서를 확인한 후 이 서비스의 특징을 짧게 설명한 후, 적절한 프로그래밍 언어로 component tree를 작성해줘. 
-Calendalart : Make your sentence to mandalart to calendar.
+# Calendalart : Make your sentence to mandalart to calendar.
 
-Calendalart — README
-1. Product Overview
-Mandal Planner는 Mandal-Art 목표 구조 + 캘린더 일정 시스템을 결합한 실행 중심 목표 관리 웹앱이다. 사용자가 목표 문장을 입력하면 AI가 이를 81칸 만다라트 구조로 분해하고, 하위 목표(Sub-goal)를 드래그하여 캘린더 일정으로 변환할 수 있다.
-핵심 개념:
-Goal Structure → Time Commitment → Progress Tracking
+## 1. Product Overview
 
-2. Target Users
-* 학생
-* 직장인
-* 단기 집중 목표(시험, 프로젝트, 자기계발 등)를 가진 사용자
+Calendalart는 **Mandal-Art 목표 구조**와 **캘린더 일정 시스템**을 결합하여, 아이디어를 구체적인 실행으로 연결해주는 목표 관리 웹앱입니다. 사용자가 이루고 싶은 목표 문장을 입력하면, AI가 이를 81칸 만다라트 구조로 체계화하고, 사용자는 분해된 하위 목표(Sub-goal)를 캘린더에 드래그하여 실행 계획을 수립할 수 있습니다.
 
-3. Goal Cycle Types
-사용자는 목표 생성 시 2가지 모드 중 선택한다.
-모드
-기간
-용도
-Weekly Mode
-1주
-단기 실행 집중
-Focus Cycle
-8주 (2개월)
-중기 목표 달성
-4. System Architecture (Recommended Stack)
-비개발자 운영 기준, 유지보수와 확장성을 고려한 스택:
-영역
-기술
-Frontend
-Next.js (React 기반)
-Styling
-Tailwind CSS
-State
-React Context / Zustand
-Backend
-Firebase (Serverless)
-DB
-Firestore
-Auth
-Firebase Auth
-Hosting
-Firebase Hosting
-AI
-Gemini API
-5. Core Feature Flow
-5.1 User Flow
-1. 웰컴 화면
-2. 목표 기간 선택 (주간 / 8주)
-3. 목표 문장 입력
-4. “만다라트 생성” 버튼 클릭
-5. Gemini API 호출 → 만다라트 생성
-6. 메인 화면 표시
-   * 상단: 캘린더
-   * 하단: 만다라트 보드
-7. Sub-goal을 드래그하여 캘린더에 등록
-8. Action 체크리스트 진행
+**핵심 개념:** `목표 구조화 (Goal Structure)` → `시간 약속 (Time Commitment)` → `진행 상황 추적 (Progress Tracking)`
 
-6. Mandal-Art Structure
-레벨
-개수
-설명
-Main Goal
-1
-사용자 입력 문장 기반
-Sub-goal
-8
-단계/시간 흐름 기반 분해
-Action
-64
-행동 카테고리 수준
-규칙
-* 항상 8개 Sub-goal 생성 (부족해도 채움)
-* Action은 일정 단위가 아닌 행동 유형 수준
-* 텍스트 수정 가능
-* 구조 변경 불가
+## 2. Target Users
 
-7. AI Generation Specification
-7.1 Input
-{
-  goalText: string,
-  cycleType: "weekly" | "focus"
-}
-7.2 AI Prompt Role
-AI는 목표를:
-1. 기한에 맞게 정제
-2. 단계/시간 흐름 기반으로 8개 Sub-goal 생성
-3. 각 Sub-goal에 대해 8개 Action 생성
-7.3 Output JSON Format
-{
-  "mainGoal": "string",
-  "subGoals": [
-    {
-      "title": "string",
-      "actions": ["string", "string", ... 8개]
-    }
-  ]
-}
+- **학생:** 시험공부, 논문 작성, 프로젝트 등 학업 목표 관리
+- **직장인:** 업무 프로젝트, 자기 계발, 부업 등 경력 목표 관리
+- **모 든 이:** 단기 집중 목표(자격증, 운동, 외국어 학습 등)를 효과적으로 달성하고 싶은 사람
 
-8. Calendar System
-* 내부 캘린더 전용
-* Sub-goal을 드래그하면 기간 일정(Event Duration) 생성
-* 등록 시:
-   * 해당 Sub-goal 텍스트 수정 불가
-   * 경고 메시지 1회 표시
+## 3. Goal Cycle Types
 
-9. Progress System
-항목
-방식
-체크 방식
-Action 체크박스
-진행률 계산
-n/8
-UI 반영
-Sub-goal 셀 색상 진해짐
-계산 위치
-프론트엔드
-10. Color System
-* Sub-goal 8개에 자동 색상 배정
-* 진행률에 따라 동일 색상 계열 내 명도 변화
+사용자는 목표 생성 시 2가지 실행 주기 중 하나를 선택하여 집중도를 조절합니다.
 
-11. Data Model (Firestore)
-Goal Document
-goals/{goalId}
-{
-  userId,
-  cycleType,
-  mainGoal,
-  subGoals: [
-    {
-      title,
-      color,
-      actions: [
-        { text, done }
-      ],
-      locked: boolean
-    }
-  ],
-  createdAt
-}
+| 모드          | 기간      | 용도                                 |
+| :------------ | :-------- | :----------------------------------- |
+| **Weekly Mode** | 1주       | 단기 과제 해결, 빠른 실행 집중       |
+| **Focus Cycle** | 8주 (2개월) | 중장기 프로젝트, 습관 형성 등 목표 달성 |
 
-12. Limit Policy
-유형
-제한
-무료 사용자
-Goal 최대 3개
-확장
-Goal Slot 구매 (추후)
-13. Editing Rules
-요소
-수정 가능
-Main Goal 텍스트
-가능
-Sub-goal 텍스트
-가능 (캘린더 등록 전)
-Action 텍스트
-가능
-구조 변경
-불가
-14. AI Call Timing
-* 웰컴 화면 → “만다라트 생성” 클릭 시 단 1회 호출
-* 이후 재생성 없음 (토큰 절약 목적)
+## 4. System Architecture
 
-15. MVP Scope Summary
-포함:
-* AI 만다라트 생성
-* 드래그 일정 등록
-* 체크리스트 기반 진행률
-* Goal 다중 관리 (최대 3개)
-제외:
-* 외부 캘린더 연동
-* AI 재생성
-* 구조 편집
-* 협업 기능
+비개발자도 쉽게 유지보수하고, 최소 비용으로 운영 및 확장할 수 있는 Serverless 스택을 채택했습니다.
+
+| 영역       | 기술                      | 비고                                                           |
+| :--------- | :------------------------ | :------------------------------------------------------------- |
+| Frontend   | **Next.js (App Router)**  | React 기반, SSR 및 서버 컴포넌트 활용                             |
+| Styling    | **Tailwind CSS**          | Utility-First CSS 프레임워크                                    |
+| State      | **React Hooks & Context** | 클라이언트 상태 관리                                            |
+| Backend    | **Firebase (Auth, Firestore)** | 사용자 인증 및 데이터베이스 (Serverless)                      |
+| **AI**         | **Groq API**              | 빠른 응답 속도의 LLM을 통한 만다라트 계획 자동 생성             |
+| **Deployment** | **Vercel**                | Next.js 네이티브 지원, Git 기반 자동 배포(CI/CD), 무료 Hobby 플랜 |
 
 component tree
 calendalart/
@@ -188,3 +49,27 @@ calendalart/
 │   ├── color.ts             // 만다라트 성취도 색상
 │   └── ai.ts               // AI 생성 로직
 └── types.ts                    // 모든 타입 정의
+
+
+## 5. 개발 및 배포 기록 (Development & Deployment Log)
+
+### v0.0.1 - 초기 개발 및 핵심 기능 구현
+- **프로젝트 설정:** Next.js, TypeScript, Tailwind CSS 기반으로 프로젝트 구조를 설정했습니다.
+- **데이터베이스 연동:** Firebase (Firestore)를 데이터베이스로 사용하여 목표 데이터(메인 목표, 하위 목표, 실행 계획 등)를 관리하는 CRUD 로직을 구현했습니다.
+- **AI 기능 구현:** Groq API와 연동하여, 사용자가 입력한 목표 문장을 8개의 구체적인 하위 목표와 각각의 실행 계획으로 자동 생성하는 AI 프롬프트를 설계하고 적용했습니다.
+- **Drag & Drop 구현:** `dnd-kit` 라이브러리를 도입하여, 생성된 하위 목표를 캘린더의 특정 날짜에 드래그 앤 드롭으로 손쉽게 추가하는 핵심 기능을 구현했습니다.
+
+### v0.0.2 - 사용성 개선 및 Vercel 배포
+- **체크리스트 기능 활성화:** 상세 목표의 개별 실행 항목(Action)을 클릭하여 완료 여부(`done`)를 토글하고, 이를 즉시 Firestore 데이터베이스에 반영하는 기능을 구현했습니다.
+- **배포 환경 결정 및 실행:**
+  - **검토:** Firebase Hosting(Classic)은 SSR 지원 부재, App Hosting은 유료(Blaze) 플랜 필요성 때문에 최종적으로 **Vercel**을 배포 플랫폼으로 선택했습니다.
+  - **선택 이유:** Vercel은 Next.js 프레임워크와의 완벽한 호환성, 편리한 CI/CD(Git Push 기반 자동 배포), 넉넉한 무료 Hobby 플랜을 제공하여 현 단계에 가장 적합하다고 판단했습니다.
+  - **배포 완료:** GitHub 저장소에 프로젝트를 푸시하고, Vercel 프로젝트를 생성하여 연동했습니다. 운영 환경에 필요한 환경 변수(Firebase 및 Groq API 키)를 Vercel 대시보드에 안전하게 설정하여 성공적으로 배포를 완료했습니다.
+
+### v0.0.3 - 디자인 강화
+- **만다라트 스타일:** main goal 및 sub goal을 만다라트 형태로
+- **캘린더에서 팝업:** 캘린더에 등록한 sub goal을 누르면 pop-up(todo list 및 goal 삭제)
+
+### v0.0.4(예정) - UI/UX 디테일 추가
+- **모바일 반응형 개선:** `goal/[id]` 페이지의 8주 달력이 모바일 화면에서도 예쁜 비율로 보이도록
+- **UI/UX 개선:** 메인 페이지에서 목표 주기('주간' vs '집중') 선택에 따라 목표 입력창의 예시 문구(`placeholder`)가 동적으로 변경되도록

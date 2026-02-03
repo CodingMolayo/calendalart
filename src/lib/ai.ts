@@ -1,3 +1,5 @@
+//===src/lib/ai.ts
+
 'use server';
 import Groq from 'groq-sdk';
 import { CycleType, SubGoal } from '../../types';
@@ -36,7 +38,8 @@ function normalizeToEight<T>(arr: T[], createDefault: () => T): T[] {
 
 export async function generateMandal(goalText: string, cycleType: CycleType) {
   const prompt = `
-You are a goal management expert. Break down the goals into a mandala structure.
+You are a great thinker. You know every valid and meaningful statement exist only in a certain world model. So you will use language to describe/simulate a suitable world model, and do reasoning within this model.
+Here is the problem : [Break down the goals into a mandala structure.]
 
 **Goal**: ${goalText}
 **Period**: ${cycleType === 'weekly' ? '1주일' : '8주 (2개월)'}
@@ -70,7 +73,7 @@ You are a goal management expert. Break down the goals into a mandala structure.
       },
     ],
     temperature: 0.4,
-    max_tokens: 2048,
+    max_tokens: 1024,
     top_p: 0.8,
   });
 

@@ -1,3 +1,5 @@
+//===src/app/page.tsx
+
 'use client';
 
 import { useState } from 'react';
@@ -43,7 +45,7 @@ export default function WelcomePage() {
     <AppLayout>
       <div className="flex flex-col items-center justify-center min-h-full p-4 sm:p-8 bg-white rounded-2xl shadow-lg">
         <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-8 text-center text-gray-800">새로운 목표 수립</h1>
-        <p className="text-gray-500 mb-6 sm:mb-8 text-center">AI와 함께 체계적인 목표를 세워보세요.</p>
+        <p className="text-gray-500 mb-6 sm:mb-8 text-center">from Sentence to Mandalart to Calendar</p>
 
         {/* 기간 선택 */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full max-w-md">
@@ -95,7 +97,7 @@ export default function WelcomePage() {
         </button>
         
         <p className="absolute bottom-4 text-xs text-gray-400">
-          v0.0.2-모바일 반응형 및 체크리스트 활성화
+          v0.0.3-Mandalart Board style. mobile calendar 배치. calendar board pop-up
         </p>
 
       </div>
@@ -103,10 +105,10 @@ export default function WelcomePage() {
   );
 }
 
-// todo : (0) 전체적으로 3*3 board가 3*3 형태로 나타나는 만다라트 구조로.
-// todo : (1) 개별 mandalboard를 3*3 형태로 나타내기
-// todo : (2) 첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
-// todo : (3) calendar에서 board 눌렀을 때 동작 - board popup + 삭제 버튼
-// todo : (4) 모바일 친화성 : 8주 달력 가로로 한 줄. 
-// todo : (5) 여러 LLM 모델을 돌아가면서 사용하도록?
-// todo : (6) 목표들 지우기, 아카이브화 하기
+
+// todo :  모바일 친화성 : 8주 달력 가로로 한 줄. 비율 조절 필요
+
+// todo :  목표 지우기 및 아카이브화 하기
+// todo :  첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
+
+// todo :  여러 LLM 모델을 돌아가면서 사용하도록?

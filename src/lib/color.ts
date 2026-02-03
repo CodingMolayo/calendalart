@@ -1,3 +1,5 @@
+//===src/lib/color.ts
+
 /**
  * Hex 색상을 HSL로 변환
  */

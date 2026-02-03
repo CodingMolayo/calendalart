@@ -6,8 +6,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'Calendalart - AI 목표 관리',
-  description: '만다라트와 캘린더로 목표를 실행하세요',
+  title: 'Calendalart',
+  description: 'from Sentence to Mandalart to Calendar',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

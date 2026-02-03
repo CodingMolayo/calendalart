@@ -10,7 +10,6 @@ export interface SubGoal {
   title: string;
   color: string;
   actions: Action[];
-  locked: boolean; // 캘린더 등록 시 true
 }
 
 export interface Goal {
@@ -30,4 +29,3 @@ export interface CalendarEvent {
   startDate: Date;
   endDate: Date;
 }
-
