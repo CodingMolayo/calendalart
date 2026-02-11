@@ -206,9 +206,7 @@ export default function MandalBoard({ goal, onUpdate }: Props) {
 
   return (
     <div className="w-full">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-gray-800 text-center">
-        만다라트 보드
-      </h2>
+
       
       {/* 3×3 Grid */}
       <div 

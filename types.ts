@@ -1,5 +1,5 @@
 // 모든 타입을 한 곳에서 관리
-export type CycleType = 'weekly' | 'focus';
+export type CycleType = 'routine' | 'weekly' | 'focus';
 
 export interface Action {
   text: string;

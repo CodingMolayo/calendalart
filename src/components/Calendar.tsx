@@ -1,3 +1,5 @@
+//===src/component/calendar.tsx
+
 'use client';
 
 import { CalendarEvent, CycleType, Goal } from '../../types';
@@ -11,7 +13,8 @@ import {
   endOfWeek, 
   isSameMonth, 
   isSameDay, 
-  addDays 
+  addDays,
+  startOfToday
 } from 'date-fns';
 import { useDroppable } from '@dnd-kit/core';
 import { useState } from 'react';
@@ -121,13 +124,15 @@ function ChecklistModal({
   );
 }
 
-// 주간 캘린더 (Weekly Mode)
-function WeeklyCalendarDay({ 
+// 루틴/주간 캘린더 - 요일별 셀
+function DayCell({ 
   date, 
+  dayLabel,
   events,
   onEventClick 
 }: { 
-  date: Date, 
+  date: Date,
+  dayLabel: string,
   events: CalendarEvent[],
   onEventClick: (event: CalendarEvent) => void
 }) {
@@ -136,21 +141,22 @@ function WeeklyCalendarDay({
   return (
     <div 
       ref={setNodeRef} 
-      className={`calendar-day border rounded-lg p-2 min-h-[120px] transition-colors shadow-sm ${
-        isOver ? 'bg-blue-100' : 'bg-white'
-      }`}
+      className={`border rounded-lg p-2 min-h-[100px] md:min-h-[120px] transition-all ${
+        isOver ? 'bg-blue-100 scale-105' : 'bg-white'
+      } shadow-sm hover:shadow-md`}
     >
-      <div className="text-center text-sm font-semibold text-gray-600">
-        {format(date, 'd')}일
+      <div className="text-center mb-2">
+        <div className="text-xs md:text-sm font-bold text-gray-500">{dayLabel}</div>
+        <div className="text-sm md:text-base font-semibold text-gray-700">{format(date, 'd')}일</div>
       </div>
-      <div className="mt-2 space-y-1">
+      <div className="space-y-1">
         {events
           .filter(e => isSameDay(e.startDate, date))
           .map(event => (
             <div 
               key={event.id} 
               onClick={() => onEventClick(event)}
-              className="text-xs p-1.5 rounded-lg shadow-md font-medium truncate cursor-pointer hover:opacity-80 transition-opacity" 
+              className="text-[10px] md:text-xs p-1.5 rounded-lg shadow-md font-medium truncate cursor-pointer hover:opacity-80 transition-opacity" 
               style={{ backgroundColor: event.color, color: 'white' }}
             >
               {event.title}
@@ -161,7 +167,7 @@ function WeeklyCalendarDay({
   );
 }
 
-// 월간 캘린더의 주간 행 (Focus Mode - week 단위 드롭존)
+// 월간 캘린더의 주간 행
 function MonthlyCalendarWeek({ 
   week, 
   monthStart, 
@@ -205,7 +211,7 @@ function MonthlyCalendarWeek({
         ))}
       </div>
 
-      {/* 이벤트 라인 (주간 전체에 걸쳐 표시) */}
+      {/* 이벤트 라인 */}
       {weekEvents.map(event => (
         <div
           key={event.id}
@@ -221,7 +227,6 @@ function MonthlyCalendarWeek({
 }
 
 export default function Calendar({ cycleType, events, goal, onDeleteEvent, onToggleAction }: Props) {
-  const [currentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const handleEventClick = (event: CalendarEvent) => {
@@ -241,25 +246,62 @@ export default function Calendar({ cycleType, events, goal, onDeleteEvent, onTog
     }
   };
 
-  // Weekly Mode: 7일 그리드
-  const renderWeeklyCalendar = () => {
-    const days = Array.from({ length: 7 }, (_, i) => addDays(currentDate, i));
+  // 루틴 캘린더: 일-월 고정
+  const renderRoutineCalendar = () => {
+    const today = startOfToday();
+    const weekStart = startOfWeek(today, { weekStartsOn: 0 }); // 일요일
+    const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+
     return (
-      <div className="grid grid-cols-7 gap-2">
-        {days.map(date => (
-          <WeeklyCalendarDay 
-            key={date.toISOString()} 
-            date={date} 
-            events={events}
-            onEventClick={handleEventClick}
-          />
-        ))}
+      <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl p-4 md:p-6 shadow-lg">
+        <h3 className="text-lg md:text-xl font-bold text-center mb-4 text-green-700">
+          🔄 주간 루틴
+        </h3>
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((date, idx) => (
+            <DayCell 
+              key={date.toISOString()} 
+              date={date} 
+              dayLabel={dayLabels[idx]}
+              events={events}
+              onEventClick={handleEventClick}
+            />
+          ))}
+        </div>
       </div>
     );
   };
 
-  // Focus Mode: 2개월 캘린더 (모바일에서도 가로 배치)
+  // 단기 캘린더: 오늘부터 7일
+  const renderWeeklyCalendar = () => {
+    const today = startOfToday();
+    const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+    const dayLabels = days.map(d => format(d, 'EEE', { locale: undefined }));
+
+    return (
+      <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-4 md:p-6 shadow-lg">
+        <h3 className="text-lg md:text-xl font-bold text-center mb-4 text-blue-700">
+          ⚡ 이번 주 목표
+        </h3>
+        <div className="grid grid-cols-7 gap-2">
+          {days.map((date, idx) => (
+            <DayCell 
+              key={date.toISOString()} 
+              date={date} 
+              dayLabel={dayLabels[idx]}
+              events={events}
+              onEventClick={handleEventClick}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // 중장기 캘린더: 2개월
   const renderFocusCalendar = () => {
+    const currentDate = new Date();
     const months = [currentDate, addMonths(currentDate, 1)];
     
     return (
@@ -277,8 +319,8 @@ export default function Calendar({ cycleType, events, goal, onDeleteEvent, onTog
           }
 
           return (
-            <div key={index} className="bg-white rounded-lg md:rounded-xl shadow-md md:shadow-lg p-2 md:p-4 lg:p-6">
-              <h3 className="text-xs md:text-lg lg:text-xl font-bold text-center mb-2 md:mb-4">
+            <div key={index} className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg md:rounded-xl shadow-lg p-2 md:p-4 lg:p-6">
+              <h3 className="text-xs md:text-lg lg:text-xl font-bold text-center mb-2 md:mb-4 text-purple-700">
                 {format(month, 'yyyy년 M월')}
               </h3>
               
@@ -307,13 +349,24 @@ export default function Calendar({ cycleType, events, goal, onDeleteEvent, onTog
     );
   };
 
+  // 타입별 제목
+  const getTitle = () => {
+    switch (cycleType) {
+      case 'routine': return '🔄 주간 루틴';
+      case 'weekly': return '⚡ 주간 플랜';
+      case 'focus': return '🎯 8주 플랜';
+    }
+  };
+
   return (
     <div className="w-full">
       <h2 className="hidden md:block text-xl md:text-2xl font-bold mb-4 md:mb-6 text-gray-800">
-        {cycleType === 'weekly' ? '주간 캘린더' : '8주 플랜'}
+        {getTitle()}
       </h2>
       
-      {cycleType === 'weekly' ? renderWeeklyCalendar() : renderFocusCalendar()}
+      {cycleType === 'routine' && renderRoutineCalendar()}
+      {cycleType === 'weekly' && renderWeeklyCalendar()}
+      {cycleType === 'focus' && renderFocusCalendar()}
       
       {/* 체크리스트 모달 */}
       {selectedEvent && (

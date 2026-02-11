@@ -9,6 +9,19 @@ import { generateMandal } from '@/lib/ai';
 import { CycleType } from '../../types';
 import AppLayout from '@/components/AppLayout';
 
+// 타입별 예시 문구
+const PLACEHOLDERS: Record<CycleType, string> = {
+  routine: '예: 매일 아침 운동하기, 하루 물 2L 마시기',
+  weekly: '예: 이번 주 프로젝트 마무리하기',
+  focus: '예: 토익 800점 달성하기, 10kg 감량하기'
+};
+
+const DESCRIPTIONS: Record<CycleType, string> = {
+  routine: '매주 반복되는 습관을 만들어보세요',
+  weekly: '1주일 안에 달성할 단기 목표를 설정하세요',
+  focus: '8주 동안 집중할 중장기 목표를 설정하세요'
+};
+
 export default function WelcomePage() {
   const router = useRouter();
   const [cycleType, setCycleType] = useState<CycleType>('weekly');
@@ -44,46 +57,76 @@ export default function WelcomePage() {
   return (
     <AppLayout>
       <div className="flex flex-col items-center justify-center min-h-full p-4 sm:p-8 bg-white rounded-2xl shadow-lg">
-        <h1 className="text-3xl sm:text-4xl font-extrabold mb-4 sm:mb-8 text-center text-gray-800">새로운 목표 수립</h1>
-        <p className="text-gray-500 mb-6 sm:mb-8 text-center">from Sentence to Mandalart to Calendar</p>
+        <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 sm:mb-4 text-center text-gray-800">
+          새로운 목표 수립
+        </h1>
+        <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">
+          from Sentence to Mandalart to Calendar
+        </p>
 
         {/* 기간 선택 */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full max-w-md">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6 sm:mb-8 w-full max-w-2xl">
+          <button
+            onClick={() => setCycleType('routine')}
+            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl text-base sm:text-lg font-semibold transition-all duration-200 ${
+              cycleType === 'routine' 
+                ? 'bg-green-500 text-white shadow-lg transform hover:scale-105' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            <div className="flex flex-col items-center">
+              <span>🔄 루틴</span>
+              <span className="text-xs mt-1 opacity-80">매주 반복</span>
+            </div>
+          </button>
+          
           <button
             onClick={() => setCycleType('weekly')}
-            className={`flex-1 px-6 py-3 rounded-xl text-lg font-semibold transition-all duration-200 ${
+            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl text-base sm:text-lg font-semibold transition-all duration-200 ${
               cycleType === 'weekly' 
                 ? 'bg-blue-500 text-white shadow-lg transform hover:scale-105' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            주간 (1주)
+            <div className="flex flex-col items-center">
+              <span>⚡ 단기</span>
+              <span className="text-xs mt-1 opacity-80">1주</span>
+            </div>
           </button>
+          
           <button
             onClick={() => setCycleType('focus')}
-            className={`flex-1 px-6 py-3 rounded-xl text-lg font-semibold transition-all duration-200 ${
+            className={`flex-1 px-4 sm:px-6 py-3 rounded-xl text-base sm:text-lg font-semibold transition-all duration-200 ${
               cycleType === 'focus' 
                 ? 'bg-purple-500 text-white shadow-lg transform hover:scale-105' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            집중 (8주)
+            <div className="flex flex-col items-center">
+              <span>🎯 중장기</span>
+              <span className="text-xs mt-1 opacity-80">8주</span>
+            </div>
           </button>
         </div>
+
+        {/* 설명 텍스트 */}
+        <p className="text-sm text-gray-600 mb-4 text-center max-w-md">
+          {DESCRIPTIONS[cycleType]}
+        </p>
 
         {/* 목표 입력 */}
         <textarea
           value={goalText}
           onChange={(e) => setGoalText(e.target.value)}
-          placeholder="예: 건강한 식습관 만들기"
-          className="w-full max-w-md h-36 p-4 border-2 border-gray-300 rounded-xl mb-6 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+          placeholder={PLACEHOLDERS[cycleType]}
+          className="w-full max-w-md h-36 p-4 border-2 border-gray-300 rounded-xl mb-6 focus:ring-2 focus:ring-blue-400 focus:border-transparent transition text-sm sm:text-base"
         />
 
         {/* 생성 버튼 */}
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="w-full max-w-md px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xl font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105"
+          className="w-full max-w-md px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg sm:text-xl font-bold rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg transform hover:scale-105"
         >
           {loading ? (
             <div className="flex items-center justify-center">
@@ -96,19 +139,16 @@ export default function WelcomePage() {
           ) : '만다라트 생성'}
         </button>
         
-        <p className="absolute bottom-4 text-xs text-gray-400">
-          v0.0.3-Mandalart Board style. mobile calendar 배치. calendar board pop-up
+        <p className="mt-6 text-xs text-gray-400">
+          v0.1.0 - Routine 기능 추가
         </p>
-
       </div>
     </AppLayout>
   );
 }
 
 
-// todo :  모바일 친화성 : 8주 달력 가로로 한 줄. 비율 조절 필요
-
-// todo :  목표 지우기 및 아카이브화 하기
-// todo :  첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
-
-// todo :  여러 LLM 모델을 돌아가면서 사용하도록?
+// todo : 모바일 친화성 : 8주 달력 가로로 한 줄. 비율 조절 필요
+// todo : 목표 지우기 및 아카이브화 하기
+// todo : 첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
+// todo : Calendar : 달력 더 예쁘게 안되나?
