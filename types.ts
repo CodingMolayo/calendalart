@@ -19,6 +19,8 @@ export interface Goal {
   mainGoal: string;
   subGoals: SubGoal[];
   createdAt: Date;
+  archived?: boolean; // 아카이브 여부
+  events?: CalendarEvent[];
 }
 
 export interface CalendarEvent {

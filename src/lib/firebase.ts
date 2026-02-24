@@ -1,3 +1,5 @@
+//=== scr/lib/firebase.ts
+
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { 
@@ -12,7 +14,8 @@ import {
   where,
   arrayRemove,
   arrayUnion,
-  Timestamp
+  Timestamp,
+  DocumentData
 } from 'firebase/firestore';
 import { Goal, SubGoal, CalendarEvent } from '../../types';
 
@@ -36,6 +39,25 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// Helper to convert Firestore Timestamps
+const convertToDate = (date: unknown): Date => {
+    if (date instanceof Timestamp) {
+        return date.toDate();
+    }
+    if (date instanceof Date) {
+        return date;
+    }
+    if (typeof date === 'string') {
+        return new Date(date);
+    }
+    // Handle object with toDate method that isn't a Timestamp
+    if (date && typeof (date as { toDate?: () => Date }).toDate === 'function') {
+        return (date as { toDate: () => Date }).toDate();
+    }
+    return new Date(); // Fallback
+};
+
 
 // 익명 로그인
 export const loginAnonymously = async () => {
@@ -64,10 +86,17 @@ export const getGoal = async (goalId: string): Promise<Goal | null> => {
   if (!docSnap.exists()) return null;
   
   const data = docSnap.data();
+  const events = (data.events || []).map((event: DocumentData) => ({
+    ...event,
+    startDate: convertToDate(event.startDate),
+    endDate: convertToDate(event.endDate),
+  } as CalendarEvent));
+
   return { 
     id: docSnap.id, 
     ...data,
-    createdAt: data.createdAt?.toDate() || new Date()
+    createdAt: convertToDate(data.createdAt),
+    events,
   } as Goal;
 };
 
@@ -80,7 +109,7 @@ export const getUserGoals = async (userId: string): Promise<Goal[]> => {
     return { 
       id: doc.id, 
       ...data,
-      createdAt: data.createdAt?.toDate() || new Date()
+      createdAt: convertToDate(data.createdAt)
     } as Goal;
   });
 };
@@ -150,24 +179,7 @@ export const addCalendarEvent = async (
 // 캘린더 일정 조회
 export const getCalendarEvents = async (goalId: string): Promise<CalendarEvent[]> => {
   const goal = await getGoal(goalId);
-  if (!goal) return [];
-
-  type FirestoreCalendarEvent = Omit<CalendarEvent, 'startDate' | 'endDate'> & {
-    startDate: Timestamp;
-    endDate: Timestamp;
-  };
-
-  const goalWithEvents = goal as Goal & { events?: FirestoreCalendarEvent[] };
-  const firestoreEvents = goalWithEvents.events || [];
-
-  return firestoreEvents.map(event => {
-    const { startDate, endDate, ...rest } = event;
-    return {
-      ...rest,
-      startDate: startDate.toDate(),
-      endDate: endDate.toDate(),
-    };
-  });
+  return goal?.events || [];
 };
 
 // 캘린더 일정 삭제 (Lock 기능 제거)
@@ -176,13 +188,39 @@ export const deleteCalendarEvent = async (goalId: string, eventId: string) => {
   const goalSnap = await getDoc(goalRef);
   if (!goalSnap.exists()) throw new Error('Goal을 찾을 수 없습니다');
 
-  const goal = goalSnap.data() as Goal & { events?: CalendarEvent[] };
-  const events = goal.events || [];
+  // Firestore에서 직접 데이터를 가져와서 비교합니다.
+  const rawData = goalSnap.data();
+  const events = rawData.events || [];
   
-  const eventToDelete = events.find(e => e.id === eventId);
+  // 삭제할 이벤트 찾기
+  const eventToDelete = events.find((e: DocumentData) => e.id === eventId);
   if (!eventToDelete) throw new Error('이벤트를 찾을 수 없습니다');
 
+  // 이벤트 삭제
   await updateDoc(goalRef, {
     events: arrayRemove(eventToDelete)
   });
+};
+
+// 🔥 Goal 아카이브
+export const archiveGoal = async (goalId: string) => {
+  const goalRef = doc(db, 'goals', goalId);
+  await updateDoc(goalRef, { archived: true });
+};
+
+// 🔥 Goal 아카이브 해제
+export const unarchiveGoal = async (goalId: string) => {
+  const goalRef = doc(db, 'goals', goalId);
+  await updateDoc(goalRef, { archived: false });
+};
+
+// 🔥 Goal 삭제
+export const deleteGoal = async (goalId: string) => {
+  const goalRef = doc(db, 'goals', goalId);
+  await updateDoc(goalRef, { 
+    archived: true,
+    deletedAt: new Date() 
+  });
+  // 실제로는 soft delete (archived + deletedAt)
+  // 필요시 hard delete: await deleteDoc(goalRef);
 };

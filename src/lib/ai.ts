@@ -118,7 +118,7 @@ export async function generateMandal(goalText: string, cycleType: CycleType) {
       },
     ],
     temperature: 0.4,
-    max_tokens: 2048,
+    max_tokens: 4096,
     top_p: 0.8,
   });
 
