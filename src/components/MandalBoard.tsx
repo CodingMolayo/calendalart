@@ -5,13 +5,15 @@ import { toggleAction } from '@/lib/firebase';
 import { getProgressColor } from '@/lib/color';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
+import ChecklistModal from './ChecklistModal';
 
 interface Props {
   goal: Goal;
   onUpdate: () => void;
 }
 
-// 개별 Action 셀 컴포넌트 (3×3 내부 - 중앙 제외)
+// 개별 Action 셀 컴포넌트
 function ActionCell({ 
   action, 
   actionIdx, 
@@ -20,7 +22,8 @@ function ActionCell({
   onUpdate,
   color,
   isCenter,
-  subGoalTitle
+  subGoalTitle,
+  onOpenModal
 }: { 
   action?: { text: string; done: boolean }, 
   actionIdx: number, 
@@ -29,38 +32,59 @@ function ActionCell({
   onUpdate: () => void,
   color: string,
   isCenter?: boolean,
-  subGoalTitle?: string
+  subGoalTitle?: string,
+  onOpenModal?: () => void;
 }) {
-  const handleToggle = async () => {
-    if (!action) return;
-    await toggleAction(goalId, subIdx, actionIdx);
-    onUpdate();
-  };
-
-  // 중앙 셀 (Sub-Goal 제목)
+  
+  // 1. 중앙 셀 (Sub-Goal 제목 - 클릭 시 모달)
   if (isCenter) {
     return (
       <div 
-        className="flex items-center justify-center p-1 md:p-2 border-2 rounded font-bold text-center"
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("중앙 셀 클릭됨!");
+          onOpenModal?.();
+        }}
+        onTouchEnd={(e) => {
+          e.stopPropagation();
+          console.log("중앙 셀 터치됨!");
+          onOpenModal?.();
+        }}
+        className="flex items-center justify-center p-1 md:p-2 border-2 rounded font-bold text-center cursor-pointer hover:scale-105 active:scale-95 transition-all shadow-sm"
         style={{ 
           borderColor: color,
-          backgroundColor: color + '30',
-          minHeight: '40px'
+          backgroundColor: color + '40',
+          minHeight: '40px',
         }}
       >
-        <span className="text-[8px] md:text-xs leading-tight text-gray-900">
+        <span className="text-[8px] md:text-xs leading-tight text-gray-900 select-none pointer-events-none">
           {subGoalTitle}
         </span>
       </div>
     );
   }
 
+  // 2. 빈 셀
   if (!action) {
-    return <div className="border rounded" style={{ borderColor: color, minHeight: '40px' }}></div>;
+    return (
+      <div 
+        className="border rounded opacity-20" 
+        style={{ borderColor: color, minHeight: '40px' }}
+      />
+    );
   }
 
+  // 3. 일반 Action 셀 (체크박스)
+  const handleToggle = async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    await toggleAction(goalId, subIdx, actionIdx);
+    onUpdate();
+  };
+
   return (
-    <label 
+    <div 
+      onClick={handleToggle}
+      onTouchEnd={handleToggle}
       className={`flex items-center justify-center p-1 md:p-2 border rounded cursor-pointer transition-all ${
         action.done ? 'bg-gray-200' : 'bg-white hover:bg-gray-50'
       }`}
@@ -69,34 +93,30 @@ function ActionCell({
         minHeight: '40px'
       }}
     >
-      <input
-        type="checkbox"
-        checked={action.done}
-        onChange={handleToggle}
-        className="hidden"
-      />
       <span 
-        className={`text-[8px] md:text-xs text-center leading-tight ${
+        className={`text-[8px] md:text-xs text-center leading-tight select-none pointer-events-none ${
           action.done ? 'line-through text-gray-500' : 'text-gray-800'
         }`}
       >
         {action.text}
       </span>
-    </label>
+    </div>
   );
 }
 
-// SubGoal 카드 (3×3 구조, 중앙에 제목)
+// SubGoal 카드 (3×3 구조)
 function MandalCard({ 
   subGoal, 
   subIdx, 
   goalId, 
-  onUpdate 
+  onUpdate,
+  onOpenModal
 }: { 
   subGoal: Goal['subGoals'][0], 
   subIdx: number, 
   goalId: string, 
-  onUpdate: () => void 
+  onUpdate: () => void,
+  onOpenModal: (subIdx: number) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `draggable-${subIdx}`,
@@ -112,67 +132,54 @@ function MandalCard({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const getProgress = () => {
-    const doneCount = subGoal.actions.filter(a => a.done).length;
-    return doneCount / 8;
-  };
-
-  const progress = getProgress();
+  const progress = subGoal.actions.filter(a => a.done).length / 8;
   const backgroundColor = getProgressColor(subGoal.color, progress);
 
-  // 3×3 배열 생성 (중앙은 제목, 나머지는 actions)
   const gridItems = [
-    subGoal.actions[0], // 0
-    subGoal.actions[1], // 1
-    subGoal.actions[2], // 2
-    subGoal.actions[3], // 3
-    null,               // 4 (중앙)
-    subGoal.actions[4], // 5
-    subGoal.actions[5], // 6
-    subGoal.actions[6], // 7
-    subGoal.actions[7], // 8
+    subGoal.actions[0], subGoal.actions[1], subGoal.actions[2],
+    subGoal.actions[3], null,               subGoal.actions[4],
+    subGoal.actions[5], subGoal.actions[6], subGoal.actions[7],
   ];
 
   return (
     <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      className="border-2 rounded-lg p-1 md:p-2 flex flex-col shadow-md hover:shadow-xl transition-all w-full h-full cursor-move"
-      style={{
-        ...style, // 드래그 transform 포함
+      className="border-2 rounded-lg p-1 md:p-2 flex flex-col shadow-md w-full h-full bg-white"
+      style={{ 
+        ...style,
         borderColor: subGoal.color,
-        backgroundColor: backgroundColor + '20',
-        touchAction: 'none', // 모바일 드래그 개선
       }}
     >
-      {/* 헤더 */}
+      {/* 헤더 - 드래그 가능 */}
       <div 
-        className="flex justify-between items-center mb-1 md:mb-2 px-1 md:px-2 py-1 rounded"
-        style={{ backgroundColor }}
+        ref={setNodeRef}
+        {...listeners} 
+        {...attributes}
+        className="flex justify-between items-center mb-1 md:mb-2 px-1 md:px-2 py-1 rounded cursor-move select-none"
+        style={{ 
+          backgroundColor,
+          touchAction: 'none'
+        }}
       >
-        <h3 className="font-bold text-[9px] md:text-sm text-white truncate flex-1">
+        <h3 className="font-bold text-[9px] md:text-sm text-white truncate flex-1 pointer-events-none">
           {subGoal.title}
         </h3>
-        <span className="text-[8px] md:text-xs font-semibold text-white bg-black/30 px-1 py-0.5 rounded ml-1">
+        <span className="text-[8px] md:text-xs font-semibold text-white bg-black/30 px-1 py-0.5 rounded ml-1 pointer-events-none">
           {subGoal.actions.filter(a => a.done).length}/8
         </span>
       </div>
 
-      {/* 3×3 Grid (중앙은 Sub-Goal 제목) */}
+      {/* 그리드 영역 - 클릭 가능 */}
       <div 
         className="grid grid-cols-3 gap-0.5 md:gap-1 flex-grow"
-        onPointerDown={(e) => e.stopPropagation()}
-        style={{ touchAction: 'auto' }} // 체크박스는 스크롤 가능
+        style={{ touchAction: 'auto' }}
       >
         {gridItems.map((action, idx) => {
           const isCenter = idx === 4;
-          // 중앙이 아닌 경우 실제 actionIndex 계산
           const actualActionIdx = idx < 4 ? idx : idx - 1;
           
           return (
             <ActionCell
-              key={idx}
+              key={`action-${subIdx}-${idx}`}
               action={action || undefined}
               actionIdx={actualActionIdx}
               subIdx={subIdx}
@@ -181,6 +188,7 @@ function MandalCard({
               color={subGoal.color}
               isCenter={isCenter}
               subGoalTitle={isCenter ? subGoal.title : undefined}
+              onOpenModal={isCenter ? () => onOpenModal(subIdx) : undefined}
             />
           );
         })}
@@ -189,38 +197,41 @@ function MandalCard({
   );
 }
 
-// 메인 보드 (3×3 구조, 중앙은 Main Goal)
+// 메인 보드
 export default function MandalBoard({ goal, onUpdate }: Props) {
-  // 3×3 배열 생성 (중앙은 Main Goal)
+  const [selectedSubGoalIndex, setSelectedSubGoalIndex] = useState<number | null>(null);
+
+  const handleOpenModal = (subGoalIndex: number) => {
+    console.log("모달 열기:", subGoalIndex);
+    setSelectedSubGoalIndex(subGoalIndex);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedSubGoalIndex(null);
+  };
+
+  const handleToggleAction = async (subGoalIndex: number, actionIndex: number) => {
+    await toggleAction(goal.id, subGoalIndex, actionIndex);
+    onUpdate();
+  };
+
   const gridItems = [
-    goal.subGoals[0], // 0
-    goal.subGoals[1], // 1
-    goal.subGoals[2], // 2
-    goal.subGoals[3], // 3
-    null,             // 4 (중앙 - Main Goal)
-    goal.subGoals[4], // 5
-    goal.subGoals[5], // 6
-    goal.subGoals[6], // 7
-    goal.subGoals[7], // 8
+    goal.subGoals[0], goal.subGoals[1], goal.subGoals[2],
+    goal.subGoals[3], null,             goal.subGoals[4],
+    goal.subGoals[5], goal.subGoals[6], goal.subGoals[7],
   ];
 
   return (
     <div className="w-full">
-
-      
-      {/* 3×3 Grid */}
       <div 
         className="grid grid-cols-3 gap-1 md:gap-2 mx-auto w-full max-w-sm md:max-w-2xl lg:max-w-4xl p-2 md:p-4 bg-gray-100 rounded-xl shadow-lg" 
         style={{ aspectRatio: '1/1' }}
       >
-        {gridItems.map((subGoal, idx) => {
-          const isCenter = idx === 4;
-          
-          // 중앙 셀 (Main Goal)
-          if (isCenter) {
+        {gridItems.map((_, idx) => {
+          if (idx === 4) {
             return (
               <div 
-                key="center"
+                key="main-center"
                 className="flex items-center justify-center border-4 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 shadow-xl"
               >
                 <h2 className="text-center font-bold text-white px-2 text-xs md:text-lg leading-tight">
@@ -230,19 +241,30 @@ export default function MandalBoard({ goal, onUpdate }: Props) {
             );
           }
           
-          // SubGoal 카드
           const actualSubIdx = idx < 4 ? idx : idx - 1;
           return (
             <MandalCard 
-              key={actualSubIdx} 
+              key={`subgoal-${actualSubIdx}`} 
               subGoal={goal.subGoals[actualSubIdx]} 
               subIdx={actualSubIdx} 
               goalId={goal.id} 
-              onUpdate={onUpdate} 
+              onUpdate={onUpdate}
+              onOpenModal={handleOpenModal}
             />
           );
         })}
       </div>
+      
+      {/* 모달 */}
+      {selectedSubGoalIndex !== null && (
+        <ChecklistModal
+          subGoal={goal.subGoals[selectedSubGoalIndex]}
+          subGoalIndex={selectedSubGoalIndex}
+          goal={goal}
+          onClose={handleCloseModal}
+          onToggleAction={handleToggleAction}
+        />
+      )}
     </div>
   );
 }

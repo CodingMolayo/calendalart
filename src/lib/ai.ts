@@ -15,6 +15,37 @@ interface AiResponse {
   subGoals: { title: string; actions: string[] }[];
 }
 
+const mandalSchema = {
+  type: "object",
+  properties: {
+    mainGoal: {
+      type: "string",
+      description: "정제된 목표 문장 (5-7단어, 한글)"
+    },
+    subGoals: {
+      type: "array",
+      minItems: 8,
+      maxItems: 8,
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Sub-goal 제목 (2-4단어, 한글)" },
+          actions: {
+            type: "array",
+            minItems: 8,
+            maxItems: 8,
+            items: { type: "string", description: "실행 가능한 액션 (2-3단어, 한글)" }
+          }
+        },
+        required: ["title", "actions"],
+        additionalProperties: false
+      }
+    }
+  },
+  required: ["mainGoal", "subGoals"],
+  additionalProperties: false
+};
+
 // 안전한 JSON 파싱
 function safeParseJSON(text: string): AiResponse {
   try {
@@ -117,6 +148,44 @@ export async function generateMandal(goalText: string, cycleType: CycleType) {
         content: prompt,
       },
     ],
+    /*
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "mandalart_schema",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            mainGoal: { type: "string" },
+            subGoals: {
+              type: "array",
+              // 핵심 포인트: 정확히 8개의 세부 목표 강제
+              minItems: 8,
+              maxItems: 8,
+              items: {
+                type: "object",
+                properties: {
+                  title: { type: "string" },
+                  actions: {
+                    type: "array",
+                    // 핵심 포인트: 각 세부 목표당 정확히 8개의 행동 강제
+                    minItems: 8,
+                    maxItems: 8,
+                    items: { type: "string" }
+                  }
+                },
+                required: ["title", "actions"],
+                additionalProperties: false
+              }
+            }
+          },
+          required: ["mainGoal", "subGoals"],
+          additionalProperties: false
+        }
+      }
+    },
+    */
     temperature: 0.4,
     max_tokens: 4096,
     top_p: 0.8,

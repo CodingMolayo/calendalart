@@ -58,7 +58,7 @@ export default function WelcomePage() {
     <AppLayout>
       <div className="flex flex-col items-center justify-center min-h-full p-4 sm:p-8 bg-white rounded-2xl shadow-lg">
         <h1 className="text-3xl sm:text-4xl font-extrabold mb-2 sm:mb-4 text-center text-gray-800">
-          새로운 목표 수립
+          Calendalart
         </h1>
         <p className="text-gray-500 mb-6 sm:mb-8 text-center text-sm sm:text-base">
           from Sentence to Mandalart to Calendar
@@ -140,7 +140,7 @@ export default function WelcomePage() {
         </button>
         
         <p className="mt-6 text-xs text-gray-400">
-          v0.1.0 - Routine 기능 추가
+          v0.2.0 - check list pop-up
         </p>
       </div>
     </AppLayout>
@@ -148,7 +148,5 @@ export default function WelcomePage() {
 }
 
 
-// todo : 모바일 친화성 : 8주 달력 가로로 한 줄. 비율 조절 필요
-// todo : 목표 지우기 및 아카이브화 하기(일부 구현. 모바일에서 잘 안나오고, 삭제랑 아카이브랑 동일한 작동임)
-// todo : 첫 화면에서, 목표 기간에 따라 예시 문구 다르게 나타내기
+// todo : 만다라트 보드에서 체크리스트 팝업 띄우기.
 // todo : Calendar : 달력 더 예쁘게 안되나?

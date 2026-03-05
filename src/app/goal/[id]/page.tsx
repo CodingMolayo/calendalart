@@ -1,3 +1,5 @@
+//===src/app/goal/[id]/page.tsx
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -13,7 +15,15 @@ import { Goal, CalendarEvent } from '../../../../types';
 import MandalBoard from '@/components/MandalBoard';
 import Calendar from '@/components/Calendar';
 import AppLayout from '@/components/AppLayout';
-import { DndContext, DragEndEvent } from '@dnd-kit/core';
+// 1. TouchSensor를 추가로 불러옵니다.
+import { 
+  DndContext, 
+  DragEndEvent, 
+  useSensor, 
+  useSensors, 
+  PointerSensor, 
+  TouchSensor 
+} from '@dnd-kit/core';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
 export default function GoalPage() {
@@ -21,6 +31,24 @@ export default function GoalPage() {
   const goalId = params.id as string;
   const [goal, setGoal] = useState<Goal | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+
+  // 2. PC와 모바일 각각에 맞는 센서를 설정합니다.
+  const sensors = useSensors(
+    // PC용: 마우스를 8px 움직여야 드래그 시작
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    // 모바일용: 250ms(0.25초) 동안 꾹 눌러야 드래그 시작
+    // 이 설정 덕분에 '툭' 치는 클릭은 100% 모달 팝업으로 연결됩니다.
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5, // 누르는 동안 손가락이 5px 이상 움직이면 드래그 취소 (실수 방지)
+      },
+    })
+  );
 
   const loadData = useCallback(async () => {
     if (goalId) {
@@ -108,7 +136,7 @@ export default function GoalPage() {
   }
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <AppLayout>
         <div className="p-4 md:p-8 space-y-8">
           <h1 className="text-2xl md:text-3xl font-bold text-center text-gray-900">

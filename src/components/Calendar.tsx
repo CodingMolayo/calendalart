@@ -23,6 +23,7 @@ import {
 import { ko } from 'date-fns/locale';
 import { useDroppable } from '@dnd-kit/core';
 import { useState } from 'react';
+import ChecklistModal from './ChecklistModal';
 
 interface Props {
   goalId: string;
@@ -31,110 +32,6 @@ interface Props {
   goal: Goal;
   onDeleteEvent?: (eventId: string) => void;
   onToggleAction?: (subGoalIndex: number, actionIndex: number) => void;
-}
-
-// 체크리스트 팝업
-function ChecklistModal({ 
-  event,
-  goal,
-  onClose,
-  onDelete,
-  onToggleAction
-}: { 
-  event: CalendarEvent,
-  goal: Goal,
-  onClose: () => void,
-  onDelete: () => void,
-  onToggleAction: (subGoalIndex: number, actionIndex: number) => void
-}) {
-  const subGoal = goal.subGoals[event.subGoalIndex];
-
-  return (
-    <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto animate-[fadeIn_0.2s_ease-out]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div 
-          className="rounded-xl p-5 mb-4 shadow-md"
-          style={{ 
-            background: `linear-gradient(135deg, ${event.color}, ${event.color}dd)` 
-          }}
-        >
-          <h3 className="text-xl font-bold text-white">{event.title}</h3>
-          <p className="text-sm text-white/90 mt-1 flex items-center gap-2">
-            📅 {format(event.startDate, 'M월 d일')} - {format(event.endDate, 'M월 d일')}
-          </p>
-        </div>
-
-        {/* 체크리스트 */}
-        <div className="space-y-2 mb-6">
-          <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            ✓ 실행 체크리스트
-          </h4>
-          {subGoal.actions.map((action, actIdx) => (
-            <label 
-              key={actIdx} 
-              className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-all group border border-transparent hover:border-gray-200"
-            >
-              <input
-                type="checkbox"
-                checked={action.done}
-                onChange={() => onToggleAction(event.subGoalIndex, actIdx)}
-                className="mt-1 w-5 h-5 rounded accent-blue-600 cursor-pointer"
-              />
-              <span className={`flex-1 text-sm transition-all ${
-                action.done 
-                  ? 'line-through text-gray-500' 
-                  : 'text-gray-800 group-hover:text-gray-900'
-              }`}>
-                {action.text}
-              </span>
-            </label>
-          ))}
-        </div>
-
-        {/* 진행률 */}
-        <div className="mb-6 bg-gray-50 rounded-xl p-4">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span className="font-medium">진행률</span>
-            <span className="font-bold text-gray-800">
-              {subGoal.actions.filter(a => a.done).length}/{subGoal.actions.length}
-            </span>
-          </div>
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className="h-full transition-all duration-500 rounded-full"
-              style={{ 
-                width: `${(subGoal.actions.filter(a => a.done).length / subGoal.actions.length) * 100}%`,
-                background: `linear-gradient(90deg, ${event.color}, ${event.color}cc)`
-              }}
-            />
-          </div>
-        </div>
-
-        {/* 버튼 */}
-        <div className="flex gap-3">
-          <button
-            onClick={onDelete}
-            className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-md hover:shadow-lg"
-          >
-            🗑️ 삭제
-          </button>
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-xl transition-all"
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // 루틴/주간 캘린더 - 요일별 셀
@@ -500,11 +397,14 @@ export default function Calendar({ cycleType, events, goal, onDeleteEvent, onTog
       {/* 체크리스트 모달 */}
       {selectedEvent && (
         <ChecklistModal
-          event={selectedEvent}
+          subGoal={goal.subGoals[selectedEvent.subGoalIndex]}
+          subGoalIndex={selectedEvent.subGoalIndex}
           goal={goal}
           onClose={() => setSelectedEvent(null)}
-          onDelete={handleDelete}
           onToggleAction={handleToggleAction}
+          startDate={selectedEvent.startDate}
+          endDate={selectedEvent.endDate}
+          onDelete={handleDelete}
         />
       )}
     </div>

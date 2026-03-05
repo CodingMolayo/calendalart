@@ -8,6 +8,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata = {
   title: 'Calendalart',
   description: 'from Sentence to Mandalart to Calendar',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,4 +26,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-

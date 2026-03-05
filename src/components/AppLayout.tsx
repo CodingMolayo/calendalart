@@ -276,6 +276,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           )}
         </nav>
+
+          {/* 버전 정 */}
+        <div className="flex-shrink-0 p-4 border-t">
+          <p className="text-xs text-center text-gray-400">
+            v0.2.0. modal pop-up
+          </p>
+        </div>
       </aside>
 
       <div className="flex flex-col flex-1">
